@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Chewy", "Plus Jakarta Sans Variable", system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, sans-serif;
+
+  /* Brand red — sampled from the ClipRev logo */
+  --color-brand-50: #fef4f2;
+  --color-brand-100: #fee6e2;
+  --color-brand-200: #fccec6;
+  --color-brand-300: #f8ab9d;
+  --color-brand-400: #f0816c;
+  --color-brand-500: #e5472f;
+  --color-brand-600: #c93620;
+  --color-brand-700: #a82c1a;
+  --color-brand-800: #8a2718;
+  --color-brand-900: #72251a;
+  --color-brand-950: #3e0f08;
+
+  /* Warm neutrals to match the off-white logo background */
+  --color-paper: #f7f6f2;
+  --color-ink: #201916;
+  --color-ink-soft: #61574f;
+  --color-night: #181009;
+
+  --animate-marquee: marquee 38s linear infinite;
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  --animate-float: float 6s ease-in-out infinite;
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-paper font-sans text-ink antialiased;
+    overflow-x: hidden;
+  }
+  ::selection {
+    @apply bg-brand-500 text-white;
+  }
+}
+
+@utility bg-dots {
+  background-image: radial-gradient(rgba(32, 25, 22, 0.09) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+}
+
+@utility bg-dots-light {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.13) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .animate-marquee,
+  .animate-float {
+    animation: none;
+  }
+}
