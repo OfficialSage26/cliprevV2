@@ -25,16 +25,20 @@
 
   /* Travels left → right; the track is two copies, so -50% → 0 loops seamlessly */
   --animate-marquee: marquee 38s linear infinite;
-  @keyframes marquee {
-    from { transform: translateX(-50%); }
-    to { transform: translateX(0); }
-  }
 
   --animate-float: float 6s ease-in-out infinite;
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-12px); }
-  }
+}
+
+/* Keyframes live at the top level (not inside @theme) so both the Vite dev
+   server and the production build reliably emit them. */
+@keyframes marquee {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
 }
 
 @layer base {

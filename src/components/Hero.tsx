@@ -31,17 +31,15 @@ const WORD_INTERVAL_MS = 5000
 
 /** The brand-red headline word, swapped out every few seconds with its underline redrawn. */
 function RotatingWord() {
-  const reduceMotion = useReducedMotion()
   const [index, setIndex] = useState(0)
 
   useEffect(() => {
-    if (reduceMotion) return
     const id = setInterval(
       () => setIndex((i) => (i + 1) % rotatingWords.length),
       WORD_INTERVAL_MS,
     )
     return () => clearInterval(id)
-  }, [reduceMotion])
+  }, [])
 
   return (
     <span className="relative inline-block text-brand-500 whitespace-nowrap">
