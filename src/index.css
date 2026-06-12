@@ -23,10 +23,11 @@
   --color-ink-soft: #61574f;
   --color-night: #181009;
 
+  /* Travels left → right; the track is two copies, so -50% → 0 loops seamlessly */
   --animate-marquee: marquee 38s linear infinite;
   @keyframes marquee {
-    from { transform: translateX(0); }
-    to { transform: translateX(-50%); }
+    from { transform: translateX(-50%); }
+    to { transform: translateX(0); }
   }
 
   --animate-float: float 6s ease-in-out infinite;

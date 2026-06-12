@@ -1,10 +1,12 @@
 import {
+  AnimatePresence,
   motion,
   useMotionValue,
   useReducedMotion,
   useSpring,
   useTransform,
 } from 'motion/react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import type { MouseEvent, ReactNode } from 'react'
 import { BadgeDollarSign, Flame } from 'lucide-react'
 import { SiInstagram, SiTiktok, SiYoutube } from 'react-icons/si'
@@ -12,6 +14,72 @@ import { heroStats, site } from '../config'
 import { Button } from './ui/Button'
 import { ClapperIcon } from './ui/Logo'
 import { CountUp } from './ui/CountUp'
+
+/** Three.js background lives in its own chunk so the page paints before it loads. */
+const HeroScene = lazy(() => import('./HeroScene'))
+
+const rotatingWords = [
+  'the feed',
+  'the timeline',
+  'the algorithm',
+  'attention',
+  'the conversation',
+  'the internet',
+] as const
+
+const WORD_INTERVAL_MS = 5000
+
+/** The brand-red headline word, swapped out every few seconds with its underline redrawn. */
+function RotatingWord() {
+  const reduceMotion = useReducedMotion()
+  const [index, setIndex] = useState(0)
+
+  useEffect(() => {
+    if (reduceMotion) return
+    const id = setInterval(
+      () => setIndex((i) => (i + 1) % rotatingWords.length),
+      WORD_INTERVAL_MS,
+    )
+    return () => clearInterval(id)
+  }, [reduceMotion])
+
+  return (
+    <span className="relative inline-block text-brand-500 whitespace-nowrap">
+      {/* clip-path (not overflow) keeps the inline baseline intact while words slide */}
+      <span className="relative inline-block [clip-path:inset(-0.18em_-0.1em)]">
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.span
+            key={rotatingWords[index]}
+            className="inline-block"
+            initial={{ y: '105%', opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: '-105%', opacity: 0 }}
+            transition={{ duration: 0.55, ease: [0.21, 0.47, 0.32, 0.98] }}
+          >
+            {rotatingWords[index]}
+          </motion.span>
+        </AnimatePresence>
+      </span>
+      <svg
+        viewBox="0 0 240 20"
+        fill="none"
+        className="absolute -bottom-2.5 left-0 w-full sm:-bottom-3.5"
+        aria-hidden="true"
+      >
+        <motion.path
+          key={index}
+          d="M5 13 C 50 5, 95 18, 138 10 S 215 7, 235 11"
+          stroke="currentColor"
+          strokeWidth="7"
+          strokeLinecap="round"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 0.7, delay: 0.45, ease: 'easeOut' }}
+        />
+      </svg>
+    </span>
+  )
+}
 
 /** Entry animation + endless gentle float, on separate wrappers so they don't fight. */
 function Floaty({
@@ -111,6 +179,11 @@ export function Hero() {
       <div className="pointer-events-none absolute -top-40 -right-40 h-[34rem] w-[34rem] rounded-full bg-brand-200/50 blur-[120px]" />
       <div className="pointer-events-none absolute -bottom-48 -left-32 h-[28rem] w-[28rem] rounded-full bg-brand-100/60 blur-[100px]" />
 
+      {/* three.js dot-wave ocean + wind, behind everything */}
+      <Suspense fallback={null}>
+        <HeroScene />
+      </Suspense>
+
       <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-5 sm:px-8 lg:grid-cols-[1.05fr_0.95fr]">
         <div>
           <motion.span
@@ -129,27 +202,7 @@ export function Hero() {
             transition={{ duration: 0.7, delay: 0.08 }}
             className="mt-6 font-display text-[2.9rem] leading-[1.04] tracking-wide text-ink sm:text-6xl lg:text-[4.2rem]"
           >
-            Clips that take over{' '}
-            <span className="relative inline-block text-brand-500">
-              the feed
-              <motion.svg
-                viewBox="0 0 240 20"
-                fill="none"
-                className="absolute -bottom-2.5 left-0 w-full sm:-bottom-3.5"
-                aria-hidden="true"
-              >
-                <motion.path
-                  d="M5 13 C 50 5, 95 18, 138 10 S 215 7, 235 11"
-                  stroke="currentColor"
-                  strokeWidth="7"
-                  strokeLinecap="round"
-                  initial={{ pathLength: 0 }}
-                  animate={{ pathLength: 1 }}
-                  transition={{ duration: 0.9, delay: 0.7, ease: 'easeOut' }}
-                />
-              </motion.svg>
-            </span>
-            .
+            Clips that take over <RotatingWord />.
           </motion.h1>
 
           <motion.p
