@@ -188,8 +188,31 @@ export default function HeroScene() {
   useEffect(() => {
     const mount = containerRef.current
     if (!mount) return
-    const container: HTMLDivElement = mount
 
+    let cancelled = false
+    let teardown: (() => void) | undefined
+
+    // Building the scene compiles GLSL and uploads ~12k vertices — heavy work
+    // we keep off the first-paint path so the hero text and entrance
+    // animations stay smooth. It runs once the browser is idle instead.
+    const setup = () => {
+      if (cancelled) return
+      teardown = init(mount)
+    }
+
+    const hasIdle = 'requestIdleCallback' in window
+    const handle = hasIdle
+      ? window.requestIdleCallback(setup, { timeout: 400 })
+      : window.setTimeout(setup, 80)
+
+    return () => {
+      cancelled = true
+      if (hasIdle) window.cancelIdleCallback(handle as number)
+      else window.clearTimeout(handle as number)
+      teardown?.()
+    }
+
+    function init(container: HTMLDivElement) {
     let renderer: THREE.WebGLRenderer
     try {
       renderer = new THREE.WebGLRenderer({
@@ -217,7 +240,7 @@ export default function HeroScene() {
     const timeUniforms: THREE.IUniform<number>[] = []
 
     // ── dot-wave ocean ──────────────────────────────────────────────
-    const waveGeometry = new THREE.PlaneGeometry(50, 24, 190, 100)
+    const waveGeometry = new THREE.PlaneGeometry(50, 24, 150, 80)
     const waveUniforms = {
       uTime: { value: 0 },
       uPixelRatio: { value: 1 },
@@ -344,7 +367,7 @@ export default function HeroScene() {
     }
 
     function resize() {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5)
       renderer.setPixelRatio(dpr)
       renderer.setSize(container.clientWidth, container.clientHeight, false)
       for (const u of pixelRatioUniforms) u.value = dpr
@@ -356,8 +379,29 @@ export default function HeroScene() {
     const resizeObserver = new ResizeObserver(resize)
     resizeObserver.observe(container)
 
-    if (reduceMotion) renderStatic()
-    else startStop()
+    // Fade the canvas in so it arrives gently instead of popping after the
+    // deferred init — and compile shaders off the main thread first, so the
+    // first frame doesn't stall.
+    const canvas = renderer.domElement
+    canvas.style.opacity = '0'
+    canvas.style.transition = 'opacity 700ms ease'
+    const reveal = () => {
+      if (!cancelled) canvas.style.opacity = '1'
+    }
+
+    if (reduceMotion) {
+      renderStatic()
+      reveal()
+    } else {
+      renderer
+        .compileAsync(scene, camera)
+        .then(() => {
+          if (cancelled) return
+          startStop()
+          reveal()
+        })
+        .catch(reveal)
+    }
 
     return () => {
       observer.disconnect()
@@ -368,6 +412,7 @@ export default function HeroScene() {
       for (const d of disposables) d.dispose()
       renderer.dispose()
       renderer.domElement.remove()
+    }
     }
   }, [])
 
